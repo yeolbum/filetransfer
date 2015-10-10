@@ -4,7 +4,7 @@
 <html>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" charset="utf-8">
 <head>
-	<title>Home</title>
+	<title>파일관리자</title>
 	<link rel="stylesheet" type="text/css" href="resources/css/bootstrap/bootstrap.css" />
 	<link rel="stylesheet" type="text/css" href="resources/css/bootstrap/jquery-ui.css" />
 	<link rel="stylesheet" type="text/css" href="resources/css/bootstrap/custom.css" />
@@ -13,7 +13,6 @@
 	<script>
 		$(function() {
 
-			
 			$('.fileAction').children("span").each(function(){
 				$(this).hover(function() {$(this).css('cursor','pointer');},function() {$(this).css('cursor','auto');});
 				
@@ -42,12 +41,7 @@
 							alert("새파일명을 입력해 주세요.");
 							return false;
 						}
-						
-						alert("source_name : " + source_name);
-						
 						rename_info.target_name = $("#target_name").val();
-						
-						alert(2);
 						
 						$.ajax({
 							type: "POST",
@@ -56,9 +50,15 @@
 							data: JSON.stringify(rename_info),
 							contentType: "application/json",
 							success: function(result){
-								location.reload();
+								
+								if(result){
+									alert("파일명이 변경되었습니다.")
+									location.reload();
+								}else{
+									alert("파일명 변경 실패")
+								}
 							},
-							error:function(e){  
+							error:function(e){
 								alert(e.responseText);  
 							} 
 						});	
@@ -71,14 +71,66 @@
 			
 		}
 		
+		function confirmDelete(file_name){
+			
+			$("#delete-dialog").dialog({
+				resizable : false,
+				modal : true,
+				position: { my: "center", at: "top", of: window },
+				open: function(event, ui) {
+					$(this).closest('.ui-dialog').find('.ui-dialog-titlebar-close').hide();
+					$(this).html(file_name + '파일이 삭제됩니다.');
+					},
+				buttons : {
+					
+					확인 : function() {
+						
+						$.ajax({
+							type: "POST",
+							url: "/deleteFile.do",
+							dataType: "json",
+							data: {"delete_file_name": file_name},
+							success: function(result){
+								
+								alert(result);
+								
+								if(result){
+									alert("삭제되었습니다.")
+									location.reload();
+								}else{
+									alert("파일삭제 실패");
+								}
+							},
+							error:function(e){
+								alert(e.responseText);  
+							} 
+						});	
+					},
+					취소 : function() {
+						$(this).dialog("close");
+					}
+				}
+			});
+		}
+		
+		function confirmDownlaod(file_path){
+			
+			location.href="/downloadFile.do?file_path="+file_path;
+			
+		}
+		
 	</script>
 </head>
 <body>
-	<div id="rename-dialog" title="파일이름 변경" >
-	</div>
+	<div id="rename-dialog" title="파일이름 변경" ></div>
+	<div id="delete-dialog" title="파일삭제" ></div>
+	
 	<div class="panel panel-default">
 		<!-- Default panel contents -->
-		<div class="panel-heading">Panel heading</div>
+		<div class="panel-heading">
+			<a href="movePath.do?path=C:/" title="C드라이브" >C드라이브</a>
+			<a href="movePath.do?path=D:/" title="D드라이브" >D드라이브</a>
+		</div>
 		<div class="panel-body">
 			<h4>현재 디렉토리 : ${dir_info.current_path}
 			</h4>
@@ -128,10 +180,12 @@
 						<td class="text-center" >${file.last_modified_dt}</td>
 						<td class="text-right">${file.file_size}</td>
 						<td class="fileAction">
-							<span onclick="">다운로드</span> |
-							<span onclick="">삭제</span> |
-							<span onclick="confirmRename('${dir_info.current_path}/${file.file_name}');">이름변경</span> |
-							<span onclick="">복사</span>
+							<c:if test="${!file.is_directory}">
+								<span onclick="confirmDownlaod('${dir_info.current_path}/${file.file_name}'">다운로드</span> |
+								<span onclick="confirmDelete('${dir_info.current_path}/${file.file_name}');">삭제</span> |
+							</c:if>
+							<span onclick="confirmRename('${dir_info.current_path}/${file.file_name}');">이름변경</span>
+						</td>
 					</tr>
 				</c:forEach>
 			</tbody>

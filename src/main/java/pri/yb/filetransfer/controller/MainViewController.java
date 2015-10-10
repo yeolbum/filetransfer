@@ -24,11 +24,12 @@ public class MainViewController {
 	public ModelAndView movePath(HttpServletRequest request, ModelAndView mv) throws Exception{
 		
 		String path = request.getParameter("path");
+		path = path == null ? "C:/" : path;		// default C드라이브
 		
-		path = path == null ? "D:/" : path;
+		logger.info("movePath : {}", path);
 		
 		mv.addObject("dir_info", mainViewService.getFileInfoList(path) );
-		mv.setViewName("home");
+		mv.setViewName("file_explore");
 		
 		return mv;
 	}
